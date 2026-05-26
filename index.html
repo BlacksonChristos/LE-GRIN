@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>La Bande 💬</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d1a;
+    --bg2: #13132a;
+    --border: rgba(255,255,255,0.08);
+    --text: #e8e8f0;
+    --muted: rgba(255,255,255,0.4);
+    --accent: #A78BFA;
+    --accent2: #4ECDC4;
+  }
+  html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+  /* ── Animations ── */
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
+  @keyframes float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes slideIn  { from{opacity:0;transform:translateY(8px) scale(.97)} to{opacity:1;transform:none} }
+  @keyframes blink    { 0%,100%{opacity:.25} 50%{opacity:1} }
+  @keyframes popIn    { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes modalIn  { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+  @keyframes spin     { to{transform:rotate(360deg)} }
+
+  /* ══════════════ AUTH ══════════════ */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0a0a18 0%, #16103a 60%, #0a1820 100%);
+    padding: 20px; animation: fadeUp .5s ease;
+  }
+  .auth-box {
+    width: 100%; max-width: 430px;
+  }
+  .auth-logo { text-align: center; margin-bottom: 28px; }
+  .auth-logo .emoji { font-size: 52px; display: inline-block; animation: float 3s ease-in-out infinite; }
+  .auth-logo h1 { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: #fff; margin: 8px 0 4px; }
+  .auth-logo p  { color: var(--muted); font-size: 14px; }
+  .auth-card {
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 24px; padding: 26px; backdrop-filter: blur(20px);
+  }
+  .auth-tabs { display: flex; background: rgba(0,0,0,.35); border-radius: 12px; padding: 4px; margin-bottom: 22px; }
+  .auth-tab  {
+    flex: 1; padding: 8px; border: none; border-radius: 9px; cursor: pointer; font-size: 13px;
+    font-weight: 600; font-family: 'Sora', sans-serif; transition: all .2s;
+    background: transparent; color: rgba(255,255,255,.45);
+  }
+  .auth-tab.active { background: rgba(167,139,250,.8); color: #fff; }
+  .auth-form { display: flex; flex-direction: column; gap: 12px; }
+  .auth-input {
+    background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.12); border-radius: 12px;
+    padding: 10px 14px; color: #fff; font-family: 'Sora', sans-serif; font-size: 14px;
+    outline: none; width: 100%; transition: border-color .2s;
+  }
+  .auth-input:focus { border-color: rgba(167,139,250,.7); }
+  .auth-input::placeholder { color: rgba(255,255,255,.3); }
+  .auth-btn {
+    padding: 12px; border: none; border-radius: 12px; font-family: 'Sora', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all .2s; color: #fff;
+  }
+  .auth-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  .auth-btn-login  { background: linear-gradient(135deg, #A78BFA, #6D28D9); }
+  .auth-btn-register { background: linear-gradient(135deg, #4ECDC4, #0d9488); }
+  .auth-hint { text-align: center; color: rgba(255,255,255,.3); font-size: 11px; }
+  .auth-err { color: #FF6B6B; font-size: 12px; }
+
+  /* Avatar/Color pickers */
+  .picker-label { color: var(--muted); font-size: 12px; margin-bottom: 6px; display: block; }
+  .avatar-grid  { display: flex; flex-wrap: wrap; gap: 7px; }
+  .avatar-opt   {
+    width: 36px; height: 36px; font-size: 19px; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; background: rgba(255,255,255,.07);
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .avatar-opt.sel { border-color: #A78BFA; background: rgba(167,139,250,.2); }
+  .color-grid   { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-opt    { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all .15s; }
+  .color-opt.sel { border-color: #fff; transform: scale(1.2); }
+
+  /* ══════════════ APP ══════════════ */
+  #app-screen { height: 100vh; display: flex; }
+
+  /* Sidebar */
+  #sidebar {
+    width: 240px; min-width: 240px; background: rgba(255,255,255,.03);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    transition: all .25s ease; overflow: hidden;
+  }
+  #sidebar.closed { width: 0; min-width: 0; }
+  .sidebar-header {
+    padding: 14px 12px 10px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .server-logo {
+    width: 36px; height: 36px; background: linear-gradient(135deg,#FF6B6B,#A78BFA);
+    border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .server-name  { color: #fff; font-weight: 700; font-size: 14px; letter-spacing: -.3px; }
+  .server-count { color: var(--muted); font-size: 11px; }
+
+  .sidebar-body { flex: 1; overflow-y: auto; padding: 10px 8px; }
+  .section-hdr  {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 6px 7px; color: var(--muted); font-size: 11px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+  .add-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px;
+    width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .add-btn:hover { background: rgba(255,255,255,.12); }
+  .ch-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 10px;
+    cursor: pointer; margin-bottom: 2px; transition: background .15s, transform .1s;
+  }
+  .ch-item:hover { background: rgba(255,255,255,.07); transform: translateX(2px); }
+  .ch-item.active { background: rgba(167,139,250,.15); }
+  .ch-item .ch-icon { font-size: 14px; flex-shrink: 0; }
+  .ch-item .ch-name { font-size: 13px; color: rgba(255,255,255,.55); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ch-item.active .ch-name { color: #fff; font-weight: 600; }
+  .ch-del { background: none; border: none; color: rgba(255,255,255,.25); cursor: pointer; font-size: 12px; padding: 0 2px; }
+  .create-grp-btn {
+    width: 100%; padding: 8px; background: rgba(255,255,255,.05);
+    border: 1px dashed rgba(255,255,255,.15); border-radius: 10px; color: rgba(255,255,255,.45);
+    font-size: 12px; cursor: pointer; font-family: 'Sora', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background .15s; margin-top: 10px;
+  }
+  .create-grp-btn:hover { background: rgba(255,255,255,.09); }
+
+  .sidebar-footer {
+    padding: 10px 12px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .my-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    cursor: pointer; flex-shrink: 0; position: relative;
+  }
+  .cert-badge { position: absolute; bottom: -2px; right: -2px; font-size: 10px; background: var(--bg); border-radius: 50%; line-height: 1; }
+  .my-name  { font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .role-tag { font-size: 9px; background: rgba(167,139,250,.3); color: #A78BFA; border-radius: 4px; padding: 1px 4px; font-weight: 700; }
+  .logout-btn {
+    background: none; border: none; color: rgba(255,255,255,.3); cursor: pointer;
+    font-size: 16px; padding: 4px; border-radius: 6px; transition: color .15s; flex-shrink: 0;
+  }
+  .logout-btn:hover { color: rgba(255,255,255,.7); }
+
+  /* Main */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #topbar {
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,.03); flex-shrink: 0;
+  }
+  #toggle-sidebar {
+    background: none; border: none; color: rgba(255,255,255,.5); cursor: pointer;
+    font-size: 20px; padding: 4px 6px; border-radius: 8px; flex-shrink: 0;
+    transition: color .15s;
+  }
+  #toggle-sidebar:hover { color: #fff; }
+  .topbar-icon  { font-size: 18px; }
+  .topbar-name  { color: #fff; font-weight: 700; font-size: 15px; }
+  .topbar-desc  { color: var(--muted); font-size: 11px; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .mini-avatars { display: flex; }
+  .mini-av {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+    margin-left: -4px; cursor: pointer; transition: transform .15s;
+  }
+  .mini-av:first-child { margin-left: 0; }
+  .mini-av:hover { transform: translateY(-2px); }
+  .mini-more {
+    width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: center; font-size: 10px;
+    color: var(--muted); margin-left: -4px;
+  }
+  .admin-btn {
+    background: rgba(167,139,250,.15); border: 1px solid rgba(167,139,250,.35);
+    border-radius: 8px; padding: 5px 10px; color: #A78BFA; cursor: pointer;
+    font-size: 12px; font-weight: 600; font-family: 'Sora', sans-serif; transition: all .15s;
+  }
+  .admin-btn:hover { background: rgba(167,139,250,.25); }
+  .mgr-btn {
+    background: rgba(255,255,255,.07); border: none; border-radius: 8px; padding: 5px 10px;
+    color: rgba(255,255,255,.5); cursor: pointer; font-size: 12px; font-family: 'Sora', sans-serif;
+  }
+
+  /* Messages */
+  #messages {
+    flex: 1; overflow-y: auto; padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .date-sep {
+    display: flex; align-items: center; gap: 12px; margin: 16px 0 10px;
+  }
+  .date-sep .line { flex: 1; height: 1px; background: rgba(255,255,255,.07); }
+  .date-sep .label { color: rgba(255,255,255,.3); font-size: 11px; font-weight: 600; letter-spacing: .5px; white-space: nowrap; }
+  .msg-row { display: flex; align-items: flex-end; gap: 8px; position: relative; }
+  .msg-row.me { flex-direction: row-reverse; }
+  .msg-av {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    flex-shrink: 0; cursor: pointer; position: relative;
+  }
+  .msg-av .cert-badge { font-size: 9px; }
+  .msg-content { max-width: 68%; position: relative; }
+  .msg-author {
+    display: flex; align-items: center; gap: 5px;
+    margin-bottom: 4px; padding-left: 4px;
+  }
+  .msg-author .name { font-size: 11px; font-weight: 700; }
+  .msg-author .cert { font-size: 11px; }
+  .msg-author .role-tag { font-size: 9px; background: rgba(167,139,250,.3); color: #A78BFA; border-radius: 4px; padding: 1px 4px; font-weight: 700; }
+  .bubble {
+    padding: 10px 14px; font-size: 14px; line-height: 1.5; word-break: break-word;
+    position: relative; animation: slideIn .2s ease;
+  }
+  .bubble.them {
+    background: rgba(255,255,255,.08); color: var(--text);
+    border-radius: 18px 18px 18px 4px; border: 1px solid rgba(255,255,255,.1);
+  }
+  .bubble.me { border-radius: 18px 18px 4px 18px; color: #fff; }
+  .bubble-time { display: block; text-align: right; font-size: 10px; opacity: .5; margin-top: 2px; }
+  .react-trigger {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,.1); border: none; border-radius: 50%;
+    width: 22px; height: 22px; cursor: pointer; font-size: 11px; opacity: 0;
+    transition: opacity .2s; display: flex; align-items: center; justify-content: center;
+  }
+  .msg-row:hover .react-trigger { opacity: 1; }
+  .react-picker {
+    position: absolute; bottom: calc(100% + 6px);
+    background: rgba(15,15,28,.97); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px; padding: 6px 10px; display: flex; gap: 6px;
+    z-index: 200; animation: popIn .15s ease; backdrop-filter: blur(20px);
+  }
+  .react-picker button {
+    background: none; border: none; cursor: pointer; font-size: 20px;
+    transition: transform .1s; padding: 2px;
+  }
+  .react-picker button:hover { transform: scale(1.3); }
+  .reactions-row { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .msg-row.me .reactions-row { justify-content: flex-end; }
+  .reaction-chip {
+    border-radius: 10px; padding: 2px 7px; cursor: pointer; font-size: 12px;
+    display: flex; align-items: center; gap: 3px; animation: popIn .15s ease;
+    border: 1px solid; color: #fff;
+  }
+  .reaction-chip .rc { font-size: 10px; opacity: .8; }
+  .typing-indicator { display: flex; align-items: center; gap: 8px; padding: 4px 0; animation: fadeUp .2s ease; }
+  .typing-av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .typing-dots { background: rgba(255,255,255,.08); border-radius: 18px; padding: 8px 14px; display: flex; gap: 4px; align-items: center; }
+  .typing-dot  { width: 5px; height: 5px; border-radius: 50%; }
+
+  /* Input */
+  #input-bar {
+    padding: 12px 16px; background: rgba(255,255,255,.03); border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .input-wrap {
+    display: flex; align-items: flex-end; gap: 10px;
+    background: rgba(255,255,255,.07); border-radius: 20px;
+    padding: 8px 8px 8px 14px; border: 1px solid rgba(255,255,255,.1);
+  }
+  .input-avatar { font-size: 18px; padding-bottom: 4px; flex-shrink: 0; }
+  #msg-input {
+    flex: 1; background: none; border: none; outline: none; color: #fff;
+    font-family: 'Sora', sans-serif; font-size: 14px; resize: none; line-height: 1.5;
+    max-height: 100px; overflow-y: auto; padding: 4px 0;
+  }
+  #msg-input::placeholder { color: rgba(255,255,255,.3); }
+  #send-btn {
+    width: 36px; height: 36px; flex-shrink: 0; border: none; border-radius: 12px;
+    cursor: pointer; color: #fff; font-size: 16px; transition: all .2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #send-btn:hover { transform: scale(1.05); }
+  #send-btn:active { transform: scale(.95); }
+  .input-info { text-align: center; margin-top: 6px; color: rgba(255,255,255,.3); font-size: 11px; }
+  .input-info .switch-link { cursor: pointer; text-decoration: underline; color: rgba(255,255,255,.4); margin-left: 6px; }
+
+  /* ══════════════ MODAL ══════════════ */
+  #modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 500;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  #modal-box {
+    background: #16162a; border: 1px solid rgba(255,255,255,.12); border-radius: 20px;
+    padding: 24px; width: 100%; max-width: 420px; max-height: 80vh; overflow-y: auto;
+    animation: modalIn .2s ease;
+  }
+  .modal-title { color: #fff; font-weight: 700; font-size: 18px; margin-bottom: 6px; }
+  .modal-sub   { color: var(--muted); font-size: 12px; margin-bottom: 18px; }
+  .modal-input {
+    width: 100%; background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.12);
+    border-radius: 10px; padding: 9px 12px; color: #fff;
+    font-family: 'Sora', sans-serif; font-size: 14px; outline: none; margin-bottom: 10px;
+  }
+  .modal-input:focus { border-color: rgba(167,139,250,.6); }
+  .modal-btn {
+    width: 100%; padding: 10px; border: none; border-radius: 12px; color: #fff;
+    font-weight: 700; font-size: 14px; cursor: pointer; font-family: 'Sora', sans-serif;
+    margin-top: 4px; transition: filter .15s;
+  }
+  .modal-btn:hover { filter: brightness(1.1); }
+  .modal-btn-primary { background: linear-gradient(135deg, #A78BFA, #6D28D9); }
+  .modal-btn-close   { background: rgba(255,255,255,.07); color: rgba(255,255,255,.5); margin-top: 10px; }
+  .type-tabs { display: flex; background: rgba(0,0,0,.3); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
+  .type-tab  {
+    flex: 1; padding: 7px; border: none; border-radius: 8px; cursor: pointer;
+    font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 600; transition: all .15s;
+    background: transparent; color: rgba(255,255,255,.45);
+  }
+  .type-tab.active { background: rgba(167,139,250,.7); color: #fff; }
+  .icon-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .icon-opt  {
+    width: 36px; height: 36px; font-size: 18px; border-radius: 10px; cursor: pointer;
+    border: 2px solid transparent; background: rgba(255,255,255,.07);
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .icon-opt.sel { border-color: #A78BFA; background: rgba(167,139,250,.2); }
+  .member-list { display: flex; flex-direction: column; gap: 6px; }
+  .member-row {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.05); border-radius: 10px; padding: 8px 12px;
+    cursor: pointer;
+  }
+  .member-row input[type=checkbox] { accent-color: #A78BFA; }
+  .member-row .av { font-size: 16px; }
+  .member-row .nm { flex: 1; font-size: 13px; color: #fff; }
+  /* Profile modal */
+  .profile-header { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .profile-av-big {
+    width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 28px; position: relative;
+  }
+  .profile-av-big .cert-badge { font-size: 16px; background: #16162a; }
+  .profile-name { color: #fff; font-weight: 700; font-size: 18px; margin-bottom: 4px; }
+  .profile-bio  { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .cert-card {
+    background: rgba(255,255,255,.05); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cert-card .cert-ico { font-size: 22px; }
+  .cert-card .cert-info-title { color: #fff; font-size: 13px; font-weight: 600; }
+  .cert-card .cert-info-sub   { color: var(--muted); font-size: 11px; }
+  .admin-actions p { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 8px; }
+  .action-btn {
+    width: 100%; padding: 9px; border-radius: 10px; cursor: pointer; font-size: 13px;
+    font-weight: 600; font-family: 'Sora', sans-serif; margin-bottom: 8px; transition: filter .15s;
+  }
+  .action-btn:hover { filter: brightness(1.1); }
+  /* Admin panel */
+  .admin-member-row {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,.05); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px;
+  }
+  .admin-av { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; position: relative; }
+  .admin-av .cert-badge { font-size: 10px; background: #16162a; }
+  .admin-info { flex: 1; min-width: 0; }
+  .admin-info .name { color: #fff; font-size: 13px; font-weight: 600; }
+  .admin-info .bio  { color: rgba(255,255,255,.35); font-size: 11px; }
+  .admin-actions-btns { display: flex; gap: 6px; }
+  .sm-btn {
+    padding: 5px 8px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    border: 1px solid; transition: filter .15s;
+  }
+  .sm-btn:hover { filter: brightness(1.1); }
+
+  /* Utility */
+  .hidden { display: none !important; }
+  .flex { display: flex; }
+  .flex-col { display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <span class="emoji">💬</span>
+      <h1>La Bande</h1>
+      <p>Messagerie pour amis</p>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Se connecter</button>
+        <button class="auth-tab" onclick="switchTab('register')">Créer un compte</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="login-form" class="auth-form">
+        <input class="auth-input" id="l-name" placeholder="Pseudo" onkeydown="if(event.key==='Enter')doLogin()">
+        <input class="auth-input" id="l-pass" type="password" placeholder="Mot de passe (optionnel)" onkeydown="if(event.key==='Enter')doLogin()">
+        <p id="login-err" class="auth-err hidden"></p>
+        <button class="auth-btn auth-btn-login" onclick="doLogin()">Connexion →</button>
+        <p class="auth-hint" id="hint-users"></p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="register-form" class="auth-form hidden">
+        <input class="auth-input" id="r-name" placeholder="Pseudo *">
+        <input class="auth-input" id="r-pass" type="password" placeholder="Mot de passe">
+        <input class="auth-input" id="r-bio"  placeholder="Bio (optionnel)">
+        <div>
+          <span class="picker-label">Avatar</span>
+          <div class="avatar-grid" id="avatar-grid"></div>
+        </div>
+        <div>
+          <span class="picker-label">Couleur</span>
+          <div class="color-grid" id="color-grid"></div>
+        </div>
+        <p id="reg-err" class="auth-err hidden"></p>
+        <button class="auth-btn auth-btn-register" onclick="doRegister()">Créer mon compte →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP SCREEN ══════════════ -->
+<div id="app-screen" class="hidden">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="server-logo">💬</div>
+      <div>
+        <div class="server-name">La Bande</div>
+        <div class="server-count" id="member-count"></div>
+      </div>
+    </div>
+    <div class="sidebar-body">
+      <div class="section-hdr">
+        Canaux
+        <button class="add-btn" id="add-channel-btn" title="Créer un canal" onclick="openModal('newChannel','channel')">+</button>
+      </div>
+      <div id="channel-list"></div>
+      <div class="section-hdr" id="grp-hdr" style="margin-top:12px">
+        Groupes privés
+        <button class="add-btn" onclick="openModal('newChannel','group')">+</button>
+      </div>
+      <div id="group-list"></div>
+      <button class="create-grp-btn" onclick="openModal('newChannel','group')">+ Créer un groupe</button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="my-avatar" id="my-avatar-btn"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="my-name" id="my-name"></span>
+          <span id="my-cert"></span>
+          <span class="role-tag hidden" id="my-role-tag">ADMIN</span>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Déconnexion">⏻</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="topbar">
+      <button id="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+      <span class="topbar-icon" id="ch-icon"></span>
+      <div>
+        <div class="topbar-name" id="ch-name"></div>
+        <div class="topbar-desc" id="ch-desc"></div>
+      </div>
+      <div class="topbar-right">
+        <div class="mini-avatars" id="mini-avatars"></div>
+        <button class="mgr-btn hidden" id="mgr-btn" onclick="openModal('manageMembers')">⚙ Membres</button>
+        <button class="admin-btn hidden" id="topbar-admin-btn" onclick="openModal('adminPanel')">👑 Admin</button>
+      </div>
+    </div>
+
+    <div id="messages"></div>
+
+    <div id="input-bar">
+      <div class="input-wrap">
+        <span class="input-avatar" id="input-avatar"></span>
+        <textarea id="msg-input" rows="1" placeholder="Envoyer un message..."
+          oninput="autoResize(this)" onkeydown="handleMsgKey(event)"></textarea>
+        <button id="send-btn" onclick="sendMessage()">↑</button>
+      </div>
+      <div class="input-info">
+        Connecté en tant que <span id="input-username"></span>
+        <span class="switch-link" onclick="logout()">changer</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div id="modal-overlay" class="hidden" onclick="closeModal(event)">
+  <div id="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-content"></div>
+    <button class="modal-btn modal-btn-close" onclick="closeModalDirect()">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════════
+const AVATARS = ["🦊","🐋","🐻","🐺","🦋","🐯","🦁","🐸","🦄","🐙","🦅","🐬","🌙","⚡","🌊","🔥"];
+const COLORS  = ["#FF6B6B","#4ECDC4","#FFE66D","#A78BFA","#F97316","#34D399","#FB7185","#60A5FA","#FBBF24","#C084FC"];
+const REACTIONS = ["❤️","😂","🔥","👍","😮","🎉"];
+const CHAN_ICONS = ["💬","⚽","🎵","😂","🎬","📚","🎮","🌍","🔥","💡","🎉","📸"];
+
+let state = {
+  users: [
+    { id:"jade",  name:"Jade",  avatar:"🐋", color:"#4ECDC4", certified:true,  role:"admin",  bio:"Admin de La Bande 👑" },
+    { id:"sam",   name:"Sam",   avatar:"🐻", color:"#FFE66D", certified:false, role:"member", bio:"Fan de ciné 🎬" },
+    { id:"leo",   name:"Léo",   avatar:"🐺", color:"#A78BFA", certified:true,  role:"member", bio:"Dev & gamer 🎮" },
+    { id:"mia",   name:"Mia",   avatar:"🦋", color:"#F97316", certified:false, role:"member", bio:"🎨 Artiste dans l'âme" },
+    { id:"alex",  name:"Alex",  avatar:"🦊", color:"#FF6B6B", certified:false, role:"member", bio:"Curieux de tout 🔍" },
+  ],
+  channels: [
+    { id:"general", name:"général",  type:"channel", desc:"Canal principal du groupe", icon:"💬", members:null },
+    { id:"sport",   name:"sport",    type:"channel", desc:"Foot, basket et tout le sport", icon:"⚽", members:null },
+    { id:"musique", name:"musique",  type:"channel", desc:"Partage de sons 🎵", icon:"🎵", members:null },
+    { id:"memes",   name:"memes",    type:"channel", desc:"Les meilleurs memes", icon:"😂", members:null },
+  ],
+  messages: {
+    general: [
+      { id:1, auth:"jade", text:"Bienvenue sur La Bande ! 🎉", ts: Date.now()-7200000, reactions:{} },
+      { id:2, auth:"sam",  text:"Enfin un endroit pour nous réunir 😄", ts: Date.now()-7000000, reactions:{"❤️":["leo","mia"]} },
+      { id:3, auth:"leo",  text:"On se retrouve ce weekend ?", ts: Date.now()-3600000, reactions:{"👍":["jade","sam","alex"]} },
+    ],
+    sport:   [{ id:10, auth:"alex", text:"Vous avez vu le match hier ?! 🔥", ts: Date.now()-5400000, reactions:{"🔥":["leo"]} }],
+    musique: [{ id:20, auth:"mia",  text:"Nouvelle playlist dispo 🎵🎶", ts: Date.now()-9000000, reactions:{"❤️":["jade"]} }],
+    memes:   [],
+  },
+  currentUser: null,
+  activeChannel: "general",
+  sidebarOpen: true,
+};
+
+// Register form selection state
+let selAvatar = AVATARS[0], selColor = COLORS[0];
+let reactionOpen = null; // msgId with open picker
+let typingTimer = null, typingInterval = null;
+
+// ── Persistence ──────────────────────────────────────────
+function save() {
+  try { localStorage.setItem("labande", JSON.stringify({ users: state.users, channels: state.channels, messages: state.messages })); } catch{}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem("labande") || "{}");
+    if(d.users)    state.users    = d.users;
+    if(d.channels) state.channels = d.channels;
+    if(d.messages) state.messages = d.messages;
+  } catch{}
+}
+
+// ── Helpers ──────────────────────────────────────────────
+const uid   = () => Math.random().toString(36).slice(2,9);
+const getUser = id => state.users.find(u => u.id === id);
+const getChannel = id => state.channels.find(c => c.id === id);
+const getMsgs = id => state.messages[id] || [];
+const isAdmin = () => state.currentUser?.role === "admin";
+const fmtTime = ts => new Date(ts).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+const fmtDate = ts => {
+  const d = new Date(ts), t = new Date();
+  if(d.toDateString() === t.toDateString()) return "Aujourd'hui";
+  const y = new Date(t); y.setDate(t.getDate()-1);
+  if(d.toDateString() === y.toDateString()) return "Hier";
+  return d.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+};
+
+const visibleChannels = () => state.channels.filter(ch => {
+  if(!state.currentUser) return false;
+  if(ch.members === null) return true;
+  return ch.members.includes(state.currentUser.id);
+});
+
+// ════════════════════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('login-form').classList.toggle('hidden', tab!=='login');
+  document.getElementById('register-form').classList.toggle('hidden', tab!=='register');
+}
+
+function buildAvatarPicker() {
+  const g = document.getElementById('avatar-grid');
+  g.innerHTML = AVATARS.map(a =>
+    `<div class="avatar-opt${a===selAvatar?' sel':''}" onclick="pickAvatar('${a}',this)">${a}</div>`
+  ).join('');
+}
+function buildColorPicker() {
+  const g = document.getElementById('color-grid');
+  g.innerHTML = COLORS.map(c =>
+    `<div class="color-opt${c===selColor?' sel':''}" style="background:${c}" onclick="pickColor('${c}',this)"></div>`
+  ).join('');
+}
+function pickAvatar(a, el) {
+  selAvatar = a;
+  document.querySelectorAll('.avatar-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function pickColor(c, el) {
+  selColor = c;
+  document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function doLogin() {
+  const name = document.getElementById('l-name').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const err  = document.getElementById('login-err');
+  const u = state.users.find(u => u.name.toLowerCase() === name.toLowerCase());
+  if(!u) { err.textContent = "Utilisateur introuvable."; err.classList.remove('hidden'); return; }
+  if(u.password && u.password !== pass) { err.textContent = "Mot de passe incorrect."; err.classList.remove('hidden'); return; }
+  err.classList.add('hidden');
+  state.currentUser = u;
+  enterApp();
+}
+
+function doRegister() {
+  const name = document.getElementById('r-name').value.trim();
+  const pass = document.getElementById('r-pass').value;
+  const bio  = document.getElementById('r-bio').value.trim();
+  const err  = document.getElementById('reg-err');
+  if(!name) { err.textContent = "Choisis un pseudo."; err.classList.remove('hidden'); return; }
+  if(state.users.find(u => u.name.toLowerCase() === name.toLowerCase())) {
+    err.textContent = "Ce pseudo est déjà pris."; err.classList.remove('hidden'); return;
+  }
+  const newUser = { id: uid(), name, avatar: selAvatar, color: selColor, certified: false, role: "member", bio: bio || "Nouveau membre 👋", password: pass };
+  state.users.push(newUser);
+  state.currentUser = newUser;
+  save();
+  enterApp();
+}
+
+function logout() {
+  state.currentUser = null;
+  clearInterval(typingInterval);
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('l-name').value = '';
+  document.getElementById('l-pass').value = '';
+  document.getElementById('login-err').classList.add('hidden');
+}
+
+// ════════════════════════════════════════════════════════════
+// APP SETUP
+// ════════════════════════════════════════════════════════════
+function enterApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  renderSidebar();
+  setActiveChannel(state.activeChannel);
+  startTypingSim();
+}
+
+function startTypingSim() {
+  clearInterval(typingInterval);
+  typingInterval = setInterval(() => {
+    const ch = getChannel(state.activeChannel);
+    const others = (ch?.members ? ch.members.map(getUser).filter(Boolean) : state.users).filter(u => u.id !== state.currentUser.id);
+    if(!others.length) return;
+    const u = others[Math.floor(Math.random() * others.length)];
+    showTyping(u);
+    setTimeout(hideTyping, 2200);
+  }, 14000);
+}
+
+// ════════════════════════════════════════════════════════════
+// SIDEBAR
+// ════════════════════════════════════════════════════════════
+function renderSidebar() {
+  if(!state.currentUser) return;
+  const cu = state.currentUser;
+
+  // Member count
+  document.getElementById('member-count').textContent = state.users.length + " membres";
+
+  // Channel list
+  const chanList = document.getElementById('channel-list');
+  const grpList  = document.getElementById('group-list');
+  const chans = visibleChannels().filter(c => c.type === 'channel');
+  const grps  = visibleChannels().filter(c => c.type === 'group');
+
+  const defaultIds = ["general","sport","musique","memes"];
+
+  chanList.innerHTML = chans.map(ch => `
+    <div class="ch-item${ch.id===state.activeChannel?' active':''}" onclick="setActiveChannel('${ch.id}')">
+      <span class="ch-icon">${ch.icon}</span>
+      <span class="ch-name">#${ch.name}</span>
+      ${isAdmin() && !defaultIds.includes(ch.id) ? `<button class="ch-del" onclick="event.stopPropagation();deleteChannel('${ch.id}')">✕</button>` : ''}
+    </div>`).join('');
+
+  // Add channel btn visible to admins only
+  document.getElementById('add-channel-btn').style.display = isAdmin() ? 'flex' : 'none';
+
+  grpList.innerHTML = grps.map(ch => `
+    <div class="ch-item${ch.id===state.activeChannel?' active':''}" onclick="setActiveChannel('${ch.id}')">
+      <span class="ch-icon">🔒</span>
+      <span class="ch-name">${ch.name}</span>
+      ${!defaultIds.includes(ch.id) ? `<button class="ch-del" onclick="event.stopPropagation();deleteChannel('${ch.id}')">✕</button>` : ''}
+    </div>`).join('');
+
+  document.getElementById('grp-hdr').style.display = grps.length ? 'flex' : 'none';
+
+  // Footer
+  const av = document.getElementById('my-avatar-btn');
+  av.style.background = cu.color + '25';
+  av.style.border = `2px solid ${cu.color}`;
+  av.innerHTML = cu.avatar + (cu.certified ? `<span class="cert-badge">✅</span>` : '');
+  av.onclick = () => openUserProfile(cu);
+  document.getElementById('my-name').textContent = cu.name;
+  document.getElementById('my-cert').textContent = cu.certified ? '✅' : '';
+  const rt = document.getElementById('my-role-tag');
+  if(cu.role === 'admin') rt.classList.remove('hidden'); else rt.classList.add('hidden');
+}
+
+function toggleSidebar() {
+  state.sidebarOpen = !state.sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('closed', !state.sidebarOpen);
+}
+
+// ════════════════════════════════════════════════════════════
+// CHANNELS
+// ════════════════════════════════════════════════════════════
+function setActiveChannel(id) {
+  state.activeChannel = id;
+  const ch = getChannel(id);
+  if(!ch) return;
+  renderSidebar();
+
+  // Topbar
+  document.getElementById('ch-icon').textContent = ch.type === 'group' ? '🔒' : ch.icon;
+  document.getElementById('ch-name').textContent = (ch.type==='channel'?'#':'') + ch.name;
+  document.getElementById('ch-desc').textContent = ch.desc || '';
+
+  // Mini avatars
+  const members = ch.members ? ch.members.map(getUser).filter(Boolean) : state.users;
+  const mini = document.getElementById('mini-avatars');
+  mini.innerHTML = members.slice(0,4).map(m =>
+    `<div class="mini-av" style="background:${m.color}30;border-color:${m.color}" title="${m.name}" onclick="openUserProfile(getUser('${m.id}'))">${m.avatar}</div>`
+  ).join('') + (members.length>4 ? `<div class="mini-more">+${members.length-4}</div>` : '');
+
+  // Buttons
+  const mgrBtn = document.getElementById('mgr-btn');
+  if(ch.members !== null) mgrBtn.classList.remove('hidden'); else mgrBtn.classList.add('hidden');
+  const adminBtn = document.getElementById('topbar-admin-btn');
+  if(isAdmin()) adminBtn.classList.remove('hidden'); else adminBtn.classList.add('hidden');
+
+  // Input
+  const cu = state.currentUser;
+  document.getElementById('input-avatar').textContent = cu.avatar;
+  document.getElementById('msg-input').placeholder = `Message ${ch.type==='group'?'dans '+ch.name:'#'+ch.name}...`;
+  const c = cu.color;
+  document.getElementById('send-btn').style.background = `linear-gradient(135deg,${c},${c}bb)`;
+  document.getElementById('input-username').innerHTML = `<span style="color:${c}">${cu.name} ${cu.avatar}</span>`;
+
+  renderMessages();
+  scrollBottom();
+  startTypingSim();
+}
+
+function deleteChannel(id) {
+  state.channels = state.channels.filter(c => c.id !== id);
+  if(state.activeChannel === id) setActiveChannel('general');
+  save();
+  renderSidebar();
+}
+
+// ════════════════════════════════════════════════════════════
+// MESSAGES
+// ════════════════════════════════════════════════════════════
+function renderMessages() {
+  const el = document.getElementById('messages');
+  const msgs = getMsgs(state.activeChannel);
+  if(!msgs.length) { el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;margin:auto;padding:40px 0">Aucun message — soyez le premier ! 👋</div>`; return; }
+
+  // Group by date
+  const groups = {};
+  msgs.forEach(m => { const k = fmtDate(m.ts); if(!groups[k]) groups[k]=[]; groups[k].push(m); });
+
+  el.innerHTML = Object.entries(groups).map(([date, ms]) => {
+    const rows = ms.map((msg, idx) => {
+      const auth = getUser(msg.auth);
+      if(!auth) return '';
+      const isMe = msg.auth === state.currentUser.id;
+      const prev = ms[idx-1];
+      const showHeader = !prev || prev.auth !== msg.auth;
+      const ar = Object.entries(msg.reactions).filter(([,u])=>u.length>0);
+
+      const headerHtml = !isMe && showHeader ? `
+        <div class="msg-author">
+          <span class="name" style="color:${auth.color}">${auth.name}</span>
+          ${auth.certified ? `<span class="cert">✅</span>` : ''}
+          ${auth.role==='admin' ? `<span class="role-tag">ADMIN</span>` : ''}
+        </div>` : '';
+
+      const avHtml = !isMe && showHeader ? `
+        <div class="msg-av" style="background:${auth.color}20;border:2px solid ${auth.color}60" onclick="openUserProfile(getUser('${auth.id}'))">
+          ${auth.avatar}${auth.certified?`<span class="cert-badge">✅</span>`:''}
+        </div>` : `<div style="width:32px;flex-shrink:0"></div>`;
+
+      const reactHtml = ar.length ? `
+        <div class="reactions-row">
+          ${ar.map(([e,u]) => `
+            <button class="reaction-chip" style="background:${u.includes(state.currentUser.id)?auth.color+'25':'rgba(255,255,255,.08)'};border-color:${u.includes(state.currentUser.id)?auth.color+'60':'rgba(255,255,255,.15)'}"
+              onclick="toggleReaction('${state.activeChannel}','${msg.id}','${e}')">
+              ${e}<span class="rc">${u.length}</span>
+            </button>`).join('')}
+        </div>` : '';
+
+      const triggerPos = isMe ? 'left:-30px' : 'right:-30px';
+
+      return `
+        <div class="msg-row${isMe?' me':''}" style="margin-bottom:${ar.length?'18px':'3px'};margin-top:${showHeader&&idx>0?'10px':'0'}">
+          ${avHtml}
+          <div class="msg-content">
+            ${headerHtml}
+            <div class="bubble ${isMe?'me':'them'}" style="${isMe?'background:linear-gradient(135deg,'+state.currentUser.color+','+state.currentUser.color+'bb)':''}" id="bubble-${msg.id}">
+              ${escHtml(msg.text)}
+              <span class="bubble-time">${fmtTime(msg.ts)}</span>
+              <button class="react-trigger" style="${triggerPos}" onclick="toggleReactionPicker('${msg.id}')">😊</button>
+            </div>
+            <div id="rpicker-${msg.id}" class="react-picker hidden" style="${isMe?'right:0':'left:0'}">
+              ${REACTIONS.map(e=>`<button onclick="toggleReaction('${state.activeChannel}','${msg.id}','${e}')">${e}</button>`).join('')}
+            </div>
+            ${reactHtml}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="date-sep"><div class="line"></div><span class="label">${date}</span><div class="line"></div></div>
+      ${rows}`;
+  }).join('');
+
+  scrollBottom();
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function sendMessage() {
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  if(!text || !state.currentUser) return;
+  const msg = { id: uid(), auth: state.currentUser.id, text, ts: Date.now(), reactions: {} };
+  if(!state.messages[state.activeChannel]) state.messages[state.activeChannel] = [];
+  state.messages[state.activeChannel].push(msg);
+  inp.value = '';
+  inp.style.height = 'auto';
+  save();
+  renderMessages();
+}
+
+function handleMsgKey(e) {
+  if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function scrollBottom() {
+  const el = document.getElementById('messages');
+  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 60);
+}
+
+// Reactions
+function toggleReactionPicker(msgId) {
+  if(reactionOpen === msgId) {
+    document.getElementById('rpicker-'+msgId)?.classList.add('hidden');
+    reactionOpen = null;
+  } else {
+    if(reactionOpen) document.getElementById('rpicker-'+reactionOpen)?.classList.add('hidden');
+    document.getElementById('rpicker-'+msgId)?.classList.remove('hidden');
+    reactionOpen = msgId;
+  }
+}
+
+function toggleReaction(chanId, msgId, emoji) {
+  const msgs = state.messages[chanId] || [];
+  const msg = msgs.find(m => String(m.id) === String(msgId));
+  if(!msg) return;
+  const ex = msg.reactions[emoji] || [];
+  const has = ex.includes(state.currentUser.id);
+  msg.reactions[emoji] = has ? ex.filter(i=>i!==state.currentUser.id) : [...ex, state.currentUser.id];
+  reactionOpen = null;
+  save();
+  renderMessages();
+}
+
+// Typing indicator
+function showTyping(user) {
+  hideTyping();
+  const el = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.id = 'typing-ind';
+  div.className = 'typing-indicator';
+  div.innerHTML = `
+    <div class="typing-av" style="background:${user.color}25;border:2px solid ${user.color}60">${user.avatar}</div>
+    <div class="typing-dots">
+      <div class="typing-dot" style="background:${user.color};animation:blink 1.2s 0s infinite"></div>
+      <div class="typing-dot" style="background:${user.color};animation:blink 1.2s .2s infinite"></div>
+      <div class="typing-dot" style="background:${user.color};animation:blink 1.2s .4s infinite"></div>
+    </div>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+function hideTyping() {
+  document.getElementById('typing-ind')?.remove();
+}
+
+// ════════════════════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════════════════════
+let modalChanType = 'channel';
+let selChanIcon   = '💬';
+let selMembers    = [];
+
+function openModal(type, extra) {
+  const box = document.getElementById('modal-content');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+
+  if(type === 'newChannel') {
+    modalChanType = extra || 'channel';
+    selChanIcon   = '💬';
+    selMembers    = [];
+    box.innerHTML = buildNewChannelModal();
+  } else if(type === 'adminPanel') {
+    box.innerHTML = buildAdminPanel();
+  } else if(type === 'manageMembers') {
+    box.innerHTML = buildManageMembers();
+  }
+}
+
+function openUserProfile(u) {
+  if(!u) return;
+  const box = document.getElementById('modal-content');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  box.innerHTML = buildUserProfile(u);
+}
+
+function closeModal(e) {
+  if(e.target === document.getElementById('modal-overlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+  renderSidebar();
+  setActiveChannel(state.activeChannel);
+}
+
+// ── New Channel Modal ────────────────────────────────────
+function buildNewChannelModal() {
+  return `
+    <h2 class="modal-title">${modalChanType==='group'?'Créer un groupe privé':'Créer un canal'}</h2>
+    <div class="type-tabs">
+      <button class="type-tab${modalChanType==='channel'?' active':''}" onclick="switchChanType('channel',this)">
+        # Canal public
+      </button>
+      <button class="type-tab${modalChanType==='group'?' active':''}" onclick="switchChanType('group',this)">
+        🔒 Groupe privé
+      </button>
+    </div>
+    <span class="picker-label">Icône</span>
+    <div class="icon-grid">
+      ${CHAN_ICONS.map(ic=>`<div class="icon-opt${ic===selChanIcon?' sel':''}" onclick="pickChanIcon('${ic}',this)">${ic}</div>`).join('')}
+    </div>
+    <input class="modal-input" id="new-chan-name" placeholder="Nom *" oninput="slugifyInput(this)">
+    <input class="modal-input" id="new-chan-desc" placeholder="Description (optionnelle)">
+    ${modalChanType==='group' ? `
+      <span class="picker-label" style="margin-bottom:8px">Membres à ajouter</span>
+      <div class="member-list">
+        ${state.users.filter(u=>u.id!==state.currentUser.id).map(u=>`
+          <label class="member-row">
+            <input type="checkbox" onchange="toggleMember('${u.id}',this)" ${selMembers.includes(u.id)?'checked':''}>
+            <span class="av">${u.avatar}</span>
+            <span class="nm">${u.name}</span>
+            ${u.certified?'<span>✅</span>':''}
+          </label>`).join('')}
+      </div>` : ''}
+    <button class="modal-btn modal-btn-primary" style="margin-top:14px" onclick="createChannel()">
+      Créer ${modalChanType==='group'?'le groupe':'le canal'}
+    </button>`;
+}
+
+function switchChanType(t, el) {
+  modalChanType = t;
+  document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('modal-content').innerHTML = buildNewChannelModal();
+}
+function pickChanIcon(ic, el) {
+  selChanIcon = ic;
+  document.querySelectorAll('.icon-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function toggleMember(id, cb) {
+  if(cb.checked) selMembers.push(id); else selMembers = selMembers.filter(i=>i!==id);
+}
+function slugifyInput(el) {
+  // allow free text; we'll slugify on save
+}
+
+function createChannel() {
+  const name = document.getElementById('new-chan-name')?.value.trim();
+  const desc = document.getElementById('new-chan-desc')?.value.trim();
+  if(!name) return;
+  const id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + uid();
+  const members = modalChanType === 'group' ? [...new Set([...selMembers, state.currentUser.id])] : null;
+  state.channels.push({ id, name: name.toLowerCase(), type: modalChanType, desc: desc||'', icon: selChanIcon, members });
+  if(!state.messages[id]) state.messages[id] = [];
+  save();
+  closeModalDirect();
+  setActiveChannel(id);
+}
+
+// ── User Profile Modal ───────────────────────────────────
+function buildUserProfile(u) {
+  const adminControls = isAdmin() && u.id !== state.currentUser.id ? `
+    <div class="admin-actions">
+      <p>Actions admin</p>
+      <button class="action-btn" style="background:${u.certified?'rgba(255,107,107,.15)':'rgba(78,205,196,.15)'};border:1px solid ${u.certified?'rgba(255,107,107,.4)':'rgba(78,205,196,.4)'};color:${u.certified?'#FF6B6B':'#4ECDC4'}"
+        onclick="toggleCertify('${u.id}')">
+        ${u.certified?'❌ Retirer la certification':'✅ Certifier ce compte'}
+      </button>
+      <button class="action-btn" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:#A78BFA"
+        onclick="toggleAdmin('${u.id}')">
+        ${u.role==='admin'?'⬇ Retirer les droits admin':'👑 Promouvoir admin'}
+      </button>
+    </div>` : '';
+
+  return `
+    <div class="profile-header">
+      <div class="profile-av-big" style="background:${u.color}25;border:3px solid ${u.color}">
+        ${u.avatar}${u.certified?`<span class="cert-badge">✅</span>`:''}
+      </div>
+      <div>
+        <div class="profile-name" style="display:flex;align-items:center;gap:6px">
+          ${u.name}${u.certified?'<span>✅</span>':''}
+        </div>
+        ${u.role==='admin'?`<span class="role-tag">ADMIN</span>`:''}
+        <p class="profile-bio">${u.bio||''}</p>
+      </div>
+    </div>
+    <div class="cert-card">
+      <span class="cert-ico">${u.certified?'✅':'⬜'}</span>
+      <div>
+        <div class="cert-info-title">${u.certified?'Compte certifié':'Compte non certifié'}</div>
+        <div class="cert-info-sub">${u.certified?'Vérifié par un administrateur':'Non vérifié'}</div>
+      </div>
+    </div>
+    ${adminControls}`;
+}
+
+function toggleCertify(userId) {
+  const u = getUser(userId);
+  if(u) { u.certified = !u.certified; save(); }
+  document.getElementById('modal-content').innerHTML = buildUserProfile(getUser(userId));
+}
+function toggleAdmin(userId) {
+  const u = getUser(userId);
+  if(u) { u.role = u.role==='admin'?'member':'admin'; save(); }
+  document.getElementById('modal-content').innerHTML = buildUserProfile(getUser(userId));
+}
+
+// ── Admin Panel ──────────────────────────────────────────
+function buildAdminPanel() {
+  return `
+    <h2 class="modal-title">👑 Panneau admin</h2>
+    <p class="modal-sub">Gérez les membres, certifications et rôles</p>
+    ${state.users.map(u=>`
+      <div class="admin-member-row">
+        <div class="admin-av" style="background:${u.color}25;border:2px solid ${u.color}">
+          ${u.avatar}${u.certified?`<span class="cert-badge">✅</span>`:''}
+        </div>
+        <div class="admin-info">
+          <div class="name" style="display:flex;align-items:center;gap:5px">
+            ${u.name}${u.role==='admin'?`<span class="role-tag">ADMIN</span>`:''}
+          </div>
+          <div class="bio">${u.bio||''}</div>
+        </div>
+        ${u.id !== state.currentUser.id ? `
+          <div class="admin-actions-btns">
+            <button class="sm-btn" style="background:${u.certified?'rgba(255,107,107,.15)':'rgba(78,205,196,.15)'};border-color:${u.certified?'rgba(255,107,107,.4)':'rgba(78,205,196,.4)'};color:${u.certified?'#FF6B6B':'#4ECDC4'}"
+              title="${u.certified?'Décertifier':'Certifier'}" onclick="toggleCertifyAdmin('${u.id}')">
+              ${u.certified?'✕':'✅'}
+            </button>
+            <button class="sm-btn" style="background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:#A78BFA"
+              title="${u.role==='admin'?'Retirer admin':'Promouvoir admin'}" onclick="toggleAdminAdmin('${u.id}')">
+              ${u.role==='admin'?'⬇':'👑'}
+            </button>
+          </div>` : ''}
+      </div>`).join('')}`;
+}
+
+function toggleCertifyAdmin(userId) {
+  const u = getUser(userId); if(u) { u.certified=!u.certified; save(); }
+  document.getElementById('modal-content').innerHTML = buildAdminPanel();
+}
+function toggleAdminAdmin(userId) {
+  const u = getUser(userId); if(u) { u.role=u.role==='admin'?'member':'admin'; save(); }
+  document.getElementById('modal-content').innerHTML = buildAdminPanel();
+}
+
+// ── Manage Members ────────────────────────────────────────
+function buildManageMembers() {
+  const ch = getChannel(state.activeChannel);
+  if(!ch || !ch.members) return '';
+  return `
+    <h2 class="modal-title">Membres du groupe "${ch.name}"</h2>
+    <p class="modal-sub">${ch.members.length} membre(s)</p>
+    <div class="member-list">
+      ${state.users.map(u=>`
+        <label class="member-row">
+          <input type="checkbox" ${ch.members.includes(u.id)?'checked':''}
+            onchange="updateGroupMember('${ch.id}','${u.id}',this)">
+          <span class="av">${u.avatar}</span>
+          <span class="nm">${u.name}</span>
+          ${u.certified?'<span>✅</span>':''}
+          ${u.role==='admin'?`<span class="role-tag">ADMIN</span>`:''}
+        </label>`).join('')}
+    </div>`;
+}
+
+function updateGroupMember(chanId, userId, cb) {
+  const ch = getChannel(chanId);
+  if(!ch || !ch.members) return;
+  if(cb.checked) { if(!ch.members.includes(userId)) ch.members.push(userId); }
+  else ch.members = ch.members.filter(i=>i!==userId);
+  save();
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+load();
+buildAvatarPicker();
+buildColorPicker();
+// Hint
+document.getElementById('hint-users').textContent = "Comptes existants : " + state.users.map(u=>u.name).join(', ');
+
+// Close reaction picker on outside click
+document.addEventListener('click', e => {
+  if(reactionOpen && !e.target.closest('.react-picker') && !e.target.closest('.react-trigger')) {
+    document.getElementById('rpicker-'+reactionOpen)?.classList.add('hidden');
+    reactionOpen = null;
+  }
+});
+</script>
+</body>
+</html>
